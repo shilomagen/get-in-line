@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "esnext"
+    ],
+    "rootDir": "src/",
+    "outDir": "dist",
+    "declaration": true
+  },
+  "include": [
+    "./src/**/*.ts"
+  ]
+}
