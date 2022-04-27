@@ -1,5 +1,5 @@
 import { SlotsFinder } from './src/slots-finder';
-import { HttpService, SessionCreator } from '@get-in-line/shared';
+import { HttpService, SessionCreator } from 'get-in-line-shared';
 
 const MAX_DAYS = 7;
 export const run = async (_event: any, _context: any) => {

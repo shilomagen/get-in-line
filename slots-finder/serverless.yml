@@ -17,6 +17,9 @@ functions:
       # Invoke Lambda function every minute
       - schedule: rate(1 minute)
 
+package:
+  individually: true
+
 plugins:
   - serverless-plugin-typescript
   - serverless-plugin-optimize

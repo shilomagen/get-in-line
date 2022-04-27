@@ -1,9 +1,8 @@
 {
-  "name": "@get-in-line/shared",
+  "name": "get-in-line-shared",
   "version": "1.0.0",
   "packageManager": "yarn@3.2.0",
-  "private": true,
-  "main": "dist/index.ts",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc"
