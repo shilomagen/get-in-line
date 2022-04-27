@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { OrganizationID, ServiceIds } from '../consts';
+import { MockPosition, OrganizationID, ServiceIds } from '../consts';
 import {
   SearchAvailableDatesRequest,
   SearchAvailableDatesResponse,
@@ -13,7 +13,6 @@ import {
   AppointmentSetRequest,
   AppointmentSetResponse,
   AppointmentSetResult,
-  LocationSearchRequest,
   LocationSearchResponse
 } from '../api';
 import { DateUtils } from '../utils';
@@ -38,6 +37,7 @@ export const Urls = {
 
 
 function requestInterceptor(config: AxiosRequestConfig, log: (...args: any[]) => void) {
+  config.params['position'] = MockPosition;
   const params = JSON.stringify(config.params);
   const body = JSON.stringify(config.data);
   log(`Calling ${config.url} with params: ${params} and body ${body}`);
@@ -54,7 +54,7 @@ export class HttpService {
   }
 
   public async getLocations(): Promise<Location[]> {
-    const params: LocationSearchRequest = { organizationId: OrganizationID };
+    const params = { organizationId: OrganizationID, position: MockPosition };
     const results = await this.httpClient.get<LocationSearchResponse>(Urls.locationSearch, { params }).then(res => res.data);
     return (results.Results ?? []).map(toLocation);
   }
