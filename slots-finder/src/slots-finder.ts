@@ -7,7 +7,7 @@ import {
   toEnrichedSlot,
   toCalendarSlot,
   HttpService, DateUtils
-} from '@get-in-line/shared';
+} from 'get-in-line-shared';
 
 export class SlotsFinder {
   constructor(private readonly httpService: HttpService) {

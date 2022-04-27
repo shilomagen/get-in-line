@@ -9,12 +9,10 @@
   "dependencies": {
     "get-in-line-shared": "^1.0.0"
   },
-  "scripts": {
-    "run-dev": "ts-node index-dev.ts"
-  },
   "devDependencies": {
     "@types/node": "^17.0.29",
     "serverless-offline": "^8.7.0",
+    "serverless-plugin-typescript": "^2.1.2",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
   }

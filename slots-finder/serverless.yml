@@ -11,16 +11,12 @@ provider:
   region: eu-central-1
 
 functions:
-  rateHandler:
+  slotsFinder:
     handler: handler.run
     events:
       # Invoke Lambda function every minute
       - schedule: rate(1 minute)
 
-package:
-  individually: true
-
 plugins:
   - serverless-plugin-typescript
-  - serverless-plugin-optimize
   - serverless-offline
