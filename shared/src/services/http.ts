@@ -13,6 +13,7 @@ import {
   AppointmentSetRequest,
   AppointmentSetResponse,
   AppointmentSetResult,
+  LocationSearchRequest,
   LocationSearchResponse
 } from '../api';
 import { DateUtils } from '../utils';
@@ -54,7 +55,7 @@ export class HttpService {
   }
 
   public async getLocations(): Promise<Location[]> {
-    const params = { organizationId: OrganizationID, position: MockPosition };
+    const params: LocationSearchRequest = { organizationId: OrganizationID };
     const results = await this.httpClient.get<LocationSearchResponse>(Urls.locationSearch, { params }).then(res => res.data);
     return (results.Results ?? []).map(toLocation);
   }

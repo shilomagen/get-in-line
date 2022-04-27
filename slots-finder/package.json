@@ -7,7 +7,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "get-in-line-shared": "^1.1.0"
+    "get-in-line-shared": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.29",
