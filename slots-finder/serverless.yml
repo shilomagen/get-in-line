@@ -9,7 +9,7 @@ provider:
   name: aws
   runtime: nodejs14.x
   region: eu-central-1
-  timeout: 15
+  timeout: 60
 
 functions:
   slotsFinder:
