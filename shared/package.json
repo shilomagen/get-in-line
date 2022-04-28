@@ -1,6 +1,6 @@
 {
   "name": "get-in-line-shared",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "packageManager": "yarn@3.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
