@@ -1,4 +1,5 @@
 import { CalendarSlot, EnrichedSlot, Location } from '../internal-types';
+import { City } from '../consts';
 
 export function toEnrichedSlot(calendarSlot: CalendarSlot, location: Location): EnrichedSlot {
   return {
@@ -8,5 +9,7 @@ export function toEnrichedSlot(calendarSlot: CalendarSlot, location: Location): 
     address: location.address,
     branchName: location.name,
     city: location.city,
+    mappedCity: City[location.city as any]
   };
 }
+

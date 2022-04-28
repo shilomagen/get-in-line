@@ -32,6 +32,7 @@ export interface EnrichedSlot {
   city: string;
   address: string;
   branchName: string;
+  mappedCity: string | undefined;
 }
 
 export interface User {
