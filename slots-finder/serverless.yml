@@ -16,6 +16,7 @@ constructs:
     type: queue
     worker:
       handler: handler.setAppointments
+      timeout: 60
 
 functions:
   slotsFinder:
