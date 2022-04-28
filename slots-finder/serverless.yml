@@ -17,7 +17,10 @@ functions:
     events:
       # Invoke Lambda function every minute
       - schedule: rate(1 minute)
+    environment:
+      QUEUE_URL: ${construct:jobs.queueUrl}
 
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
+  - serverless-lift

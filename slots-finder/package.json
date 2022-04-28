@@ -7,10 +7,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.79.0",
     "get-in-line-shared": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.29",
+    "serverless-lift": "^1.14.0",
     "serverless-offline": "^8.7.0",
     "serverless-plugin-typescript": "^2.1.2",
     "ts-node": "^10.7.0",
