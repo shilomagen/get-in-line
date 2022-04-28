@@ -23,7 +23,7 @@ functions:
     handler: handler.findSlots
     events:
       # Invoke Lambda function every minute
-      - schedule: rate(2 minute)
+      - schedule: rate(2 minutes)
     environment:
       QUEUE_URL: ${construct:slotsQueue.queueUrl}
 
