@@ -9,21 +9,21 @@ provider:
   name: aws
   runtime: nodejs14.x
   region: eu-central-1
-  timeout: 60
+  timeout: 120
 
 constructs:
   slotsQueue:
     type: queue
     worker:
       handler: handler.setAppointments
-      timeout: 60
+      timeout: 120
 
 functions:
   slotsFinder:
     handler: handler.findSlots
     events:
       # Invoke Lambda function every minute
-      - schedule: rate(1 minute)
+      - schedule: rate(2 minute)
     environment:
       QUEUE_URL: ${construct:slotsQueue.queueUrl}
 
