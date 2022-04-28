@@ -11,9 +11,15 @@ provider:
   region: eu-central-1
   timeout: 60
 
+constructs:
+  slotsQueue:
+    type: queue
+    worker:
+      handler: handler.setAppointments
+
 functions:
   slotsFinder:
-    handler: handler.run
+    handler: handler.findSlots
     events:
       # Invoke Lambda function every minute
       - schedule: rate(1 minute)

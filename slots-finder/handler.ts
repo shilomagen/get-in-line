@@ -1,9 +1,10 @@
 import { SlotsFinder } from './src/slots-finder';
 import { HttpService, SessionCreator } from 'get-in-line-shared/dist';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+import {} from 'serverless-lift'
 
 const MAX_DAYS = 7;
-export const run = async (_event: any, _context: any) => {
+export const findSlots = async (_event: any, _context: any) => {
   const token = await SessionCreator.create();
   const httpService = new HttpService(token);
   const slotsFinder = new SlotsFinder(httpService);
@@ -16,8 +17,11 @@ export const run = async (_event: any, _context: any) => {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(slot)
     })));
-  
+
   await Promise.all(publishes);
 };
 
+export const setAppointments = async (event: any, _context: any) => {
+  console.log(event);
+}
 
