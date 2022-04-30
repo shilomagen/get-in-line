@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.79.0",
-    "get-in-line-shared": "^1.2.1"
+    "get-in-line-shared": "^1.3.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.29",
