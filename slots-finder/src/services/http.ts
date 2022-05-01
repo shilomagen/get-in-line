@@ -1,20 +1,19 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { MockPosition, OrganizationID, ServiceIds } from '../consts';
 import {
+  AnswerQuestionRequest,
+  AppointmentSetRequest,
+  AppointmentSetResponse,
+  LocationSearchRequest,
+  LocationSearchResponse,
+  LocationServicesRequest,
+  LocationServicesResponse,
+  PrepareVisitData,
+  PrepareVisitResponse,
   SearchAvailableDatesRequest,
   SearchAvailableDatesResponse,
   SearchAvailableSlotsRequest,
-  SearchAvailableSlotsResponse,
-  LocationServicesRequest,
-  LocationServicesResponse,
-  AnswerQuestionRequest,
-  PrepareVisitData,
-  PrepareVisitResponse,
-  AppointmentSetRequest,
-  AppointmentSetResponse,
-  AppointmentSetResult,
-  LocationSearchRequest,
-  LocationSearchResponse
+  SearchAvailableSlotsResponse
 } from '../api';
 import { DateUtils } from '../utils';
 import { EnrichedService, Location, Service } from '../internal-types';
@@ -38,20 +37,34 @@ export const Urls = {
 
 
 function requestInterceptor(config: AxiosRequestConfig, log: (...args: any[]) => void) {
-  config.params['position'] = MockPosition;
+  (config.params || {})['position'] = MockPosition;
   const params = JSON.stringify(config.params);
   const body = JSON.stringify(config.data);
   log(`Calling ${config.url} with params: ${params} and body ${body}`);
   return config;
 }
 
+function responseInterceptor(axiosResponse: AxiosResponse, log: (...args: any[]) => void) {
+  log(`Got response from request: ${axiosResponse.config.url} Response: `, axiosResponse.data)
+  return axiosResponse;
+}
+
+axios.interceptors.response.use()
+
 export class HttpService {
   private readonly httpClient: AxiosInstance;
 
   constructor(token: string) {
-    this.httpClient = axios.create({ headers: { Authorization: `JWT ${token}` } });
+    this.httpClient = axios.create({
+      headers: {
+        Authorization: `JWT ${token}`,
+        'Application-Name': process.env.APPLICATION_NAME || '',
+        'Application-API-Key': process.env.APPLICATION_API_KEY || ''
+      }
+    });
     console.log(`Creating instance with token: JWT ${token}`);
     this.httpClient.interceptors.request.use((config) => requestInterceptor(config, console.log));
+    this.httpClient.interceptors.response.use((response) => responseInterceptor(response, console.log));
   }
 
   public async getLocations(): Promise<Location[]> {
@@ -98,13 +111,13 @@ export class HttpService {
       .then(res => res.data.Data);
   }
 
-  public setAppointment(visitToken: string, params: AppointmentSetRequest): Promise<AppointmentSetResult | null> {
+  public setAppointment(visitToken: string, params: AppointmentSetRequest): Promise<AppointmentSetResponse | null> {
     return this.httpClient.get<AppointmentSetResponse>(Urls.setAppointment, {
       params,
       headers: {
         PreparedVisitToken: visitToken
       }
-    }).then(res => res.data.Results);
+    }).then(res => res.data);
   }
 
 

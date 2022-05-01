@@ -1,17 +1,17 @@
-import { SlotsFinder } from './src/slots-finder';
-import { HttpService, SessionCreator } from 'get-in-line-shared/dist';
+import { SlotsFinder } from './src/services/slots-finder';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import {} from 'serverless-lift'
+import { HttpService, SessionCreator } from './src/services';
 
 const MAX_DAYS = 7;
-export const findSlots = async (_event: any, _context: any) => {
+
+export async function findSlots(_event: any, _context: any): Promise<void> {
   const token = await SessionCreator.create();
   const httpService = new HttpService(token);
   const slotsFinder = new SlotsFinder(httpService);
   const sqsClient = new SQSClient({ region: 'eu-central-1' });
-  const queueUrl = process.env.QUEUE_URL;
+  const queueUrl = process.env.SLOTS_QUEUE_URL;
   const slots = await slotsFinder.find(MAX_DAYS);
-
+  console.log(`Found ${slots.length} in the session`)
   const publishes = slots.map(slot =>
     sqsClient.send(new SendMessageCommand({
       QueueUrl: queueUrl,
@@ -20,8 +20,4 @@ export const findSlots = async (_event: any, _context: any) => {
 
   await Promise.all(publishes);
 };
-
-export const setAppointments = async (event: any, _context: any) => {
-  console.log(event);
-}
 

@@ -7,7 +7,7 @@ export class AppointmentHandler {
   constructor(private readonly httpService: HttpService) {
   }
 
-  setAppointment(userVisit: UserVisit, slot: EnrichedSlot) {
+  async setAppointment(userVisit: UserVisit, slot: EnrichedSlot) {
     const { serviceId, date, timeSinceMidnight } = slot;
     const { visitId, visitToken } = userVisit;
     const setAppointmentRequest: AppointmentSetRequest = {
@@ -18,9 +18,14 @@ export class AppointmentHandler {
       preparedVisitId: visitId
     };
 
-    const response = this.httpService.setAppointment(visitToken, setAppointmentRequest);
-    console.log(response);
-    return response;
+    const response = await this.httpService.setAppointment(visitToken, setAppointmentRequest);
+    if (response?.Success) {
+      return response.Results;
+    }
+    console.log(`Could not set an appointment due to `, response?.Messages.join('\n'));
+    return null;
+
+
   }
 
 }

@@ -4,6 +4,7 @@ import { AnswerQuestionRequest, PrepareVisitData } from '../api';
 import { Answers, QuestionResolver } from './question-resolver';
 
 export class VisitPreparer {
+
   constructor(private readonly httpService: HttpService) {
   }
 
@@ -44,12 +45,15 @@ export class VisitPreparer {
         })
     };
     const nextQuestion = await this.httpService.answer(request);
+    console.log(JSON.stringify(nextQuestion));
     return this.answer(nextQuestion, user);
   }
 
   async prepare(user: User, serviceId: number): Promise<UserVisit> {
     const initialQuestion = await this.httpService.prepareVisit(serviceId);
+    console.log(JSON.stringify(initialQuestion));
     const visitData = await this.answer(initialQuestion, user);
+
     return {
       ...user,
       visitId: visitData.PreparedVisitId,

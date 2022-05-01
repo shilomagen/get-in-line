@@ -4,28 +4,84 @@ service: slots-finder
 
 frameworkVersion: '3'
 
-
 provider:
   name: aws
   runtime: nodejs14.x
   region: eu-central-1
-  timeout: 120
+  stage: dev
+  timeout: 360
+  environment:
+    USERS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    APPLICATION_NAME: ${param:APPLICATION_NAME}
+    APPLICATION_API_KEY: ${param:APPLICATION_API_KEY}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - sns:SetSMSAttributes
+        - sns:Publish
+      Resource: "*"
+
+resources:
+  Resources:
+    UsersDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.USERS_TABLE}
 
 constructs:
+  appointmentSetQueue:
+    type: queue
+    worker:
+      handler: notifier.notifyAppointmentSet
+      timeout: 120
   slotsQueue:
     type: queue
     worker:
-      handler: handler.setAppointments
+      handler: appointment-setter.setAppointment
       timeout: 120
+      environment:
+        NOTIFIER_QUEUE_URL: ${construct:appointmentSetQueue.queueUrl}
+
 
 functions:
   slotsFinder:
     handler: handler.findSlots
+    memorySize: 256
+    timeout: 360
     events:
       # Invoke Lambda function every minute
       - schedule: rate(2 minutes)
     environment:
-      QUEUE_URL: ${construct:slotsQueue.queueUrl}
+      SLOTS_QUEUE_URL: ${construct:slotsQueue.queueUrl}
+  createUser:
+    handler: user-creator.create
+    memorySize: 128
+    timeout: 30
+    events:
+      - http:
+          path: users
+          method: post
+
 
 plugins:
   - serverless-plugin-typescript

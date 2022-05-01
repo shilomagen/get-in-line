@@ -1,4 +1,4 @@
-import { PrepareVisitData } from '../api/prepare-visit';
+import { PrepareVisitData } from '../api';
 
 export enum Answers {
   Id = 'ID',
