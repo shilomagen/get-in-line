@@ -14,7 +14,7 @@ provider:
     USERS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
     APPLICATION_NAME: ${param:APPLICATION_NAME}
     APPLICATION_API_KEY: ${param:APPLICATION_API_KEY}
-
+#
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -33,6 +33,8 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
+        SSESpecification:
+          SSEEnabled: true
         AttributeDefinitions:
           -
             AttributeName: "id"

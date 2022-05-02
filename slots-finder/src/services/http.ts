@@ -21,6 +21,22 @@ import { toLocation, toService } from '../mappers';
 
 const BaseURL = 'https://central.qnomy.com/CentralAPI';
 
+const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
+
+export async function loopWithDelay<T, Response>(array: T[], method: (request: T) => Promise<Response>, delayTime: number = 300): Promise<Response[]> {
+  const results: Awaited<Response[]> = [];
+  for (let i = 0; i < array.length; i++) {
+    await delay(delayTime);
+    try {
+      const result = await method(array[i])
+      results.push(result);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return results;
+}
 
 export const Urls = {
   createAnonymousSession: `${BaseURL}/UserCreateAnonymous`,

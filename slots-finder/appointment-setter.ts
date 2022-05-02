@@ -79,6 +79,7 @@ export async function setAppointment(event: any, _context: any) {
   if (mappedCity) {
     const user = await getFirstUserByUser(mappedCity, dbClient);
     if (user) {
+      await markUserAsHandled(user.id, dbClient);
       console.log(`Scheduling appointment to user ${user.id}`);
       const appointment = await scheduleAppointment(user, slot);
       if (appointment) {
