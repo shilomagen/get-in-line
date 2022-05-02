@@ -54,7 +54,7 @@ axios.interceptors.response.use()
 export class HttpService {
   private readonly httpClient: AxiosInstance;
 
-  constructor(token: string) {
+  constructor(token: string, enableLogs: boolean = true) {
     this.httpClient = axios.create({
       headers: {
         Authorization: `JWT ${token}`,
@@ -63,8 +63,11 @@ export class HttpService {
       }
     });
     console.log(`Creating instance with token: JWT ${token}`);
-    this.httpClient.interceptors.request.use((config) => requestInterceptor(config, console.log));
-    this.httpClient.interceptors.response.use((response) => responseInterceptor(response, console.log));
+    if (enableLogs) {
+      this.httpClient.interceptors.request.use((config) => requestInterceptor(config, console.log));
+      this.httpClient.interceptors.response.use((response) => responseInterceptor(response, console.log));
+    }
+
   }
 
   public async getLocations(): Promise<Location[]> {

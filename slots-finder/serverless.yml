@@ -70,7 +70,7 @@ functions:
     timeout: 360
     events:
       # Invoke Lambda function every minute
-      - schedule: rate(2 minutes)
+      - schedule: rate(1 minute)
     environment:
       SLOTS_QUEUE_URL: ${construct:slotsQueue.queueUrl}
   createUser:

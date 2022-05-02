@@ -7,7 +7,7 @@ export const notifyAppointmentSet = async (event: any, _context: any) => {
   const phoneToSend = userAppointment.phone.replace('0', '+972');
   const phonesToNotify = [SHILOS_PHONE, phoneToSend];
 
-  const content = `היי ${userAppointment.firstName}, קבענו לכם תור לעיר ${userAppointment.city} בסניף ${userAppointment.branchName} בכתובת ${userAppointment.address} בשעה ${userAppointment.hour}.\n
+  const content = `היי ${userAppointment.firstName}, קבענו לכם תור לעיר ${userAppointment.city} בסניף ${userAppointment.branchName} בכתובת ${userAppointment.address} בתאריך ${userAppointment.date} בשעה ${userAppointment.hour}\n
   אם עזרנו לכם, נשמח לטיפ בלינק הבא :)\n 
   https://bit.ly/3OJ9bTf \n 
   תודה רבה!`;

@@ -6,12 +6,12 @@ const MAX_DAYS = 7;
 
 export async function findSlots(_event: any, _context: any): Promise<void> {
   const token = await SessionCreator.create();
-  const httpService = new HttpService(token);
+  const httpService = new HttpService(token, false);
   const slotsFinder = new SlotsFinder(httpService);
   const sqsClient = new SQSClient({ region: 'eu-central-1' });
   const queueUrl = process.env.SLOTS_QUEUE_URL;
   const slots = await slotsFinder.find(MAX_DAYS);
-  console.log(`Found ${slots.length} in the session`)
+  console.log(`Found ${slots.length} in the session, in ${slots.map(s => s.city).join(',')}`)
   const publishes = slots.map(slot =>
     sqsClient.send(new SendMessageCommand({
       QueueUrl: queueUrl,
