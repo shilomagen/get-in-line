@@ -11,7 +11,8 @@ export async function findSlots(_event: any, _context: any): Promise<void> {
   const sqsClient = new SQSClient({ region: 'eu-central-1' });
   const queueUrl = process.env.SLOTS_QUEUE_URL;
   const slots = await slotsFinder.find(MAX_DAYS);
-  console.log(`Found ${slots.length} in the session, in ${slots.map(s => s.city).join(',')}`)
+  const slotsCities = Array.from(new Set(slots.map(s => s.city))).join(',')
+  console.log(`Found ${slots.length} in the session, in ${slotsCities}`)
   const publishes = slots.map(slot =>
     sqsClient.send(new SendMessageCommand({
       QueueUrl: queueUrl,
