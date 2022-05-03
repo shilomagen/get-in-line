@@ -11,6 +11,7 @@
   },
   "include": [
     "./src/**/*.ts",
-    "./handler.ts"
+    "./handler.ts",
+    "**/*.ts"
   ]
 }

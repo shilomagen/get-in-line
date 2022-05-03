@@ -1,5 +1,5 @@
 import { UserAppointment } from './appointment-setter';
-import client from 'twilio';
+import { Twilio } from 'twilio';
 import { getLogger, LoggerMessages, withRequest } from './src/services/logger';
 import { SmsNotifierService } from './src/services/sms-notifier';
 
@@ -8,7 +8,7 @@ const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 
 const SHILOS_PHONE = process.env.SHILOS_PHONE;
 export const notifyAppointmentSet = async (event: any, context: any) => {
-  const smsNotifierService = new SmsNotifierService(client(twilioAccountSid, twilioAuthToken))
+  const smsNotifierService = new SmsNotifierService(new Twilio(twilioAccountSid!, twilioAuthToken!));
   withRequest(event, context);
   const logger = getLogger();
 
@@ -20,7 +20,7 @@ export const notifyAppointmentSet = async (event: any, context: any) => {
   עזרו לנו להמשיך לפתח ולתחזק את גםכןבוט ופרגנו לנו בקפה 🤙 \n
   https://bit.ly/3KHsUiB 
   `;
-  const publishPromises = phonesToNotify.map(phone => smsNotifierService.send(phone, content))
+  const publishPromises = phonesToNotify.map(phone => smsNotifierService.send(phone, content));
   const responses = await Promise.allSettled(publishPromises);
   logger.info({ responses }, LoggerMessages.SMSPublishResult);
 };
