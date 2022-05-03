@@ -36,7 +36,7 @@ async function getFirstUserByUser(city: string, dbClient: DynamoDBClient): Promi
 }
 
 
-async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, retryNumber: number = 0): Promise<InternalSetAppointmentResponse> {
+async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, dbClient: DynamoDBClient): Promise<InternalSetAppointmentResponse> {
   const { id, firstName, lastName, phone } = user;
   const token = await SessionCreator.create();
   const httpClient = new HttpService(token);
@@ -45,7 +45,7 @@ async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, retryNu
   logger.info({}, LoggerMessages.StartVisitPrepare);
   const userVisit = await visitPreparer.prepare({ id, firstName, lastName, phone }, slot.serviceId);
   if (userVisit.status === 'SUCCESS') {
-    logger.info({ retryNumber }, LoggerMessages.SetAppointmentStart);
+    logger.info({}, LoggerMessages.SetAppointmentStart);
     const response = await appointmentHandler.setAppointment(userVisit.data, slot);
     if (response.status === 'SUCCESS') {
       return {
@@ -53,8 +53,9 @@ async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, retryNu
         data: response.data
       };
     } else {
-      if (response.data.errorCode === ErrorCode.SetAppointmentGeneralError && retryNumber < 3) {
-        return scheduleAppointment(user, slot, retryNumber + 1);
+      if (response.data.errorCode === ErrorCode.SetAppointmentGeneralError) {
+        logger.info({ userId: user.id }, LoggerMessages.MarkUserNotHandled);
+        await markHandled(user.id, dbClient, false);
       }
       return {
         status: 'FAILED',
@@ -75,7 +76,7 @@ async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, retryNu
 
 }
 
-async function markUserAsHandled(userId: string, dbClient: DynamoDBClient) {
+async function markHandled(userId: string, dbClient: DynamoDBClient, handled: boolean) {
   const command = new UpdateItemCommand({
     TableName: process.env.USERS_TABLE,
     Key: {
@@ -83,7 +84,7 @@ async function markUserAsHandled(userId: string, dbClient: DynamoDBClient) {
     },
     UpdateExpression: 'set handled = :value',
     ExpressionAttributeValues: {
-      ':value': { BOOL: true }
+      ':value': { BOOL: handled }
     }
   });
   return dbClient.send(command);
@@ -109,9 +110,9 @@ export async function setAppointment(event: any, context: any) {
     const user = await getFirstUserByUser(mappedCity, dbClient);
     if (user) {
       logger.info({ user }, LoggerMessages.MarkUserHandled);
-      await markUserAsHandled(user.id, dbClient);
+      await markHandled(user.id, dbClient, true);
       logger.info({ userId: user.id }, LoggerMessages.ScheduleAppointmentStart);
-      const appointmentResponse = await scheduleAppointment(user, slot);
+      const appointmentResponse = await scheduleAppointment(user, slot, dbClient);
       if (appointmentResponse.status === 'SUCCESS') {
         const userAppointment: UserAppointment = { ...toAppointment(slot), ...user };
         logger.info({ userAppointment }, LoggerMessages.UserAppointmentSuccessPublishToNotifier);

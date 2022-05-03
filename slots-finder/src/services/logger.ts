@@ -11,6 +11,7 @@ export enum LoggerMessages {
   SetAppointmentStart = 'SetAppointmentStart',
   SlotsFound = 'SlotsFound',
   MarkUserHandled = 'MarkUserHandled',
+  MarkUserNotHandled = 'MarkUserNotHandled',
   ScheduleAppointmentStart = 'ScheduleAppointmentStart',
   UserAppointmentSuccessPublishToNotifier = 'UserAppointmentSuccessPublishToNotifier',
   UserAppointmentError = 'UserAppointmentError',
