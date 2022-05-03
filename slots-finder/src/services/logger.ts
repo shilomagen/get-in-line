@@ -18,6 +18,7 @@ export enum LoggerMessages {
   VisitPrepareNextMessage = 'VisitPrepareNextMessage',
   VisitPrepareInitialQuestion = 'VisitPrepareInitialQuestion',
   VisitPrepareDoneQuestions = 'VisitPrepareDoneQuestions',
+  SMSPublishResult = 'SMSPublishResult'
 }
 
 const destination = pinoLambdaDestination();
