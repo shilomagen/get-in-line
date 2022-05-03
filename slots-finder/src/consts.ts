@@ -58,4 +58,6 @@ export enum ErrorCode {
   General = 100,
   IdNotValid = 101,
   PhoneNumberNotValid = 102,
+  AlreadyHadAnAppointment = 103,
+  SetAppointmentGeneralError= 104,
 }

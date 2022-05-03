@@ -3,6 +3,7 @@ import { User, UserVisitResponse } from '../internal-types';
 import { AnswerQuestionRequest, PrepareVisitData } from '../api';
 import { Answers, QuestionResolver } from './question-resolver/question-resolver';
 import { ErrorCode } from '../consts';
+import { getLogger, LoggerMessages } from './logger';
 
 interface PrepareRequestSuccess {
   status: 'SUCCESS',
@@ -17,6 +18,8 @@ interface PrepareRequestFailed {
 }
 
 type PrepareVisitResponse = PrepareRequestSuccess | PrepareRequestFailed
+
+const logger = getLogger();
 
 export class VisitPreparer {
 
@@ -44,14 +47,14 @@ export class VisitPreparer {
 
   private async answer(question: PrepareVisitData, user: User): Promise<PrepareVisitResponse> {
     if (QuestionResolver.isDone(question)) {
-      console.log('Done with questions');
+      logger.info({}, LoggerMessages.VisitPrepareDoneQuestions);
       return {
         status: 'SUCCESS',
         data: question
       };
     }
     if (QuestionResolver.hasErrors(question)) {
-      console.log('Found an error', question);
+      logger.info({ question }, LoggerMessages.VisitPrepareError);
       return {
         status: 'FAILED',
         data: {
@@ -72,13 +75,13 @@ export class VisitPreparer {
         })
     };
     const nextQuestion = await this.httpService.answer(request);
-    console.log(JSON.stringify(nextQuestion));
+    logger.info({ question: nextQuestion }, LoggerMessages.VisitPrepareNextMessage);
     return this.answer(nextQuestion, user);
   }
 
   async prepare(user: User, serviceId: number): Promise<UserVisitResponse> {
     const initialQuestion = await this.httpService.prepareVisit(serviceId);
-    console.log(JSON.stringify(initialQuestion));
+    logger.info({ question: initialQuestion }, LoggerMessages.VisitPrepareInitialQuestion);
     const response = await this.answer(initialQuestion, user);
     if (response.status === 'SUCCESS') {
       return {

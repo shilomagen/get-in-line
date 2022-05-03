@@ -18,6 +18,9 @@ import {
 import { DateUtils } from '../utils';
 import { EnrichedService, Location, Service } from '../internal-types';
 import { toLocation, toService } from '../mappers';
+import { getLogger, LoggerMessages } from './logger';
+
+const logger = getLogger();
 
 const BaseURL = 'https://central.qnomy.com/CentralAPI';
 
@@ -28,7 +31,7 @@ export async function loopWithDelay<T, Response>(array: T[], method: (request: T
   for (let i = 0; i < array.length; i++) {
     await delay(delayTime);
     try {
-      const result = await method(array[i])
+      const result = await method(array[i]);
       results.push(result);
     } catch (e) {
       console.error(e);
@@ -52,20 +55,20 @@ export const Urls = {
 };
 
 
-function requestInterceptor(config: AxiosRequestConfig, log: (...args: any[]) => void) {
+function requestInterceptor(config: AxiosRequestConfig) {
   (config.params || {})['position'] = MockPosition;
   const params = JSON.stringify(config.params);
   const body = JSON.stringify(config.data);
-  log(`Calling ${config.url} with params: ${params} and body ${body}`);
+  logger.info({ url: config.url, params, body }, LoggerMessages.Request);
   return config;
 }
 
-function responseInterceptor(axiosResponse: AxiosResponse, log: (...args: any[]) => void) {
-  log(`Got response from request: ${axiosResponse.config.url} Response: `, axiosResponse.data)
+function responseInterceptor(axiosResponse: AxiosResponse) {
+  logger.info({ url: axiosResponse.config.url, data: axiosResponse.data }, LoggerMessages.Response);
   return axiosResponse;
 }
 
-axios.interceptors.response.use()
+axios.interceptors.response.use();
 
 export class HttpService {
   private readonly httpClient: AxiosInstance;
@@ -78,10 +81,9 @@ export class HttpService {
         'Application-API-Key': process.env.APPLICATION_API_KEY || ''
       }
     });
-    console.log(`Creating instance with token: JWT ${token}`);
     if (enableLogs) {
-      this.httpClient.interceptors.request.use((config) => requestInterceptor(config, console.log));
-      this.httpClient.interceptors.response.use((response) => responseInterceptor(response, console.log));
+      this.httpClient.interceptors.request.use((config) => requestInterceptor(config));
+      this.httpClient.interceptors.response.use((response) => responseInterceptor(response));
     }
 
   }

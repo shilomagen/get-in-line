@@ -6,13 +6,18 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { Appointment, EnrichedSlot, InternalSetAppointmentResponse } from './src/internal-types';
 import { AppointmentHandler, HttpService, SessionCreator, VisitPreparer } from './src/services';
 import { toAppointment } from './src/mappers';
+import { ErrorCode } from './src/consts';
+import { getLogger, LoggerMessages, withRequest } from './src/services/logger';
+
+const logger = getLogger();
 
 export type UserAppointment = Appointment & Omit<UserDomain, 'cities' | 'handled'>;
 
 const byDate = (a: UserDomain, b: UserDomain) => a.createdAt - b.createdAt;
 
 async function getFirstUserByUser(city: string, dbClient: DynamoDBClient): Promise<UserDomain | null> {
-  console.log(`Looking for users with city ${city}`);
+
+  logger.info({ city }, LoggerMessages.CityLookup);
   const command = new ScanCommand({
     TableName: process.env.USERS_TABLE,
     FilterExpression: 'contains(#DYNOBASE_cities, :cities) AND #DYNOBASE_handled = :handled',
@@ -27,27 +32,38 @@ async function getFirstUserByUser(city: string, dbClient: DynamoDBClient): Promi
   });
   const { Items } = await dbClient.send(command);
   const response = (Items || []).map(item => unmarshall(item) as UserDomain).sort(byDate);
-  console.log(response);
   return response[0] ?? null;
 }
 
 
-async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot): Promise<InternalSetAppointmentResponse> {
+async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot, retryNumber: number = 0): Promise<InternalSetAppointmentResponse> {
   const { id, firstName, lastName, phone } = user;
   const token = await SessionCreator.create();
   const httpClient = new HttpService(token);
   const visitPreparer = new VisitPreparer(httpClient);
   const appointmentHandler = new AppointmentHandler(httpClient);
-  console.log('Preparing the visit');
+  logger.info({}, LoggerMessages.StartVisitPrepare);
   const userVisit = await visitPreparer.prepare({ id, firstName, lastName, phone }, slot.serviceId);
   if (userVisit.status === 'SUCCESS') {
-    console.log('Setting up the appointment');
-    const appointment = await appointmentHandler.setAppointment(userVisit.data, slot);
-    console.log(appointment);
-    return {
-      status: 'SUCCESS',
-      data: appointment!
-    };
+    logger.info({ retryNumber }, LoggerMessages.SetAppointmentStart);
+    const response = await appointmentHandler.setAppointment(userVisit.data, slot);
+    if (response.status === 'SUCCESS') {
+      return {
+        status: 'SUCCESS',
+        data: response.data
+      };
+    } else {
+      if (response.data.errorCode === ErrorCode.SetAppointmentGeneralError && retryNumber < 3) {
+        return scheduleAppointment(user, slot, retryNumber + 1);
+      }
+      return {
+        status: 'FAILED',
+        data: {
+          errorCode: response.data.errorCode
+        }
+      };
+    }
+
   }
   return {
     status: 'FAILED',
@@ -83,30 +99,28 @@ function publishAppointmentWasSet(userAppointment: UserAppointment) {
   return sqsClient.send(command);
 }
 
-export async function setAppointment(event: any, _context: any) {
+export async function setAppointment(event: any, context: any) {
+  withRequest(event, context);
+
   const dbClient = createDynamoDBClient();
   const slot = JSON.parse(event.Records[0].body) as EnrichedSlot;
   const { mappedCity } = slot;
   if (mappedCity) {
     const user = await getFirstUserByUser(mappedCity, dbClient);
     if (user) {
+      logger.info({ user }, LoggerMessages.MarkUserHandled);
       await markUserAsHandled(user.id, dbClient);
-      console.log(`Scheduling appointment to user ${user.id}`);
+      logger.info({ userId: user.id }, LoggerMessages.ScheduleAppointmentStart);
       const appointmentResponse = await scheduleAppointment(user, slot);
       if (appointmentResponse.status === 'SUCCESS') {
-        console.log(`Marking user as handled ${user.id}`);
-        await markUserAsHandled(user.id, dbClient);
         const userAppointment: UserAppointment = { ...toAppointment(slot), ...user };
-        console.log(`Publishing to notifier ${user.id}`);
+        logger.info({ userAppointment }, LoggerMessages.UserAppointmentSuccessPublishToNotifier);
         await publishAppointmentWasSet(userAppointment);
       } else {
-        //TODO: publish notification failed
-        console.log('We had an error', appointmentResponse.data);
+        logger.error({ error: appointmentResponse.data }, LoggerMessages.UserAppointmentError);
       }
-
-
     } else {
-      console.log(`No user was found for city ${mappedCity}`);
+      logger.info({ city: mappedCity }, LoggerMessages.UserNotFoundForCity);
     }
   }
 }

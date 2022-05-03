@@ -24,6 +24,7 @@ provider:
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
+        - dynamodb:BatchGetItem
         - sns:SetSMSAttributes
         - sns:Publish
       Resource: "*"
@@ -61,6 +62,7 @@ constructs:
     type: queue
     worker:
       handler: appointment-setter.setAppointment
+      maxRetries: 5
       timeout: 120
       environment:
         NOTIFIER_QUEUE_URL: ${construct:appointmentSetQueue.queueUrl}
@@ -84,7 +86,6 @@ functions:
       - http:
           path: users
           method: post
-
 
 plugins:
   - serverless-plugin-typescript
