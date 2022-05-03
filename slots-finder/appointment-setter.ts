@@ -3,8 +3,7 @@ import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { UserDomain } from './user-creator';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import { Appointment, EnrichedSlot } from './src/internal-types';
-import { AppointmentSetResult } from './src/api';
+import { Appointment, EnrichedSlot, InternalSetAppointmentResponse } from './src/internal-types';
 import { AppointmentHandler, HttpService, SessionCreator, VisitPreparer } from './src/services';
 import { toAppointment } from './src/mappers';
 
@@ -33,7 +32,7 @@ async function getFirstUserByUser(city: string, dbClient: DynamoDBClient): Promi
 }
 
 
-async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot): Promise<AppointmentSetResult | null> {
+async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot): Promise<InternalSetAppointmentResponse> {
   const { id, firstName, lastName, phone } = user;
   const token = await SessionCreator.create();
   const httpClient = new HttpService(token);
@@ -41,11 +40,23 @@ async function scheduleAppointment(user: UserDomain, slot: EnrichedSlot): Promis
   const appointmentHandler = new AppointmentHandler(httpClient);
   console.log('Preparing the visit');
   const userVisit = await visitPreparer.prepare({ id, firstName, lastName, phone }, slot.serviceId);
-  console.log(userVisit);
-  console.log('Setting up the appointment');
-  const appointment = await appointmentHandler.setAppointment(userVisit, slot);
-  console.log(appointment);
-  return appointment;
+  if (userVisit.status === 'SUCCESS') {
+    console.log('Setting up the appointment');
+    const appointment = await appointmentHandler.setAppointment(userVisit.data, slot);
+    console.log(appointment);
+    return {
+      status: 'SUCCESS',
+      data: appointment!
+    };
+  }
+  return {
+    status: 'FAILED',
+    data: {
+      errorCode: userVisit.data.errorCode
+    }
+  };
+
+
 }
 
 async function markUserAsHandled(userId: string, dbClient: DynamoDBClient) {
@@ -81,13 +92,16 @@ export async function setAppointment(event: any, _context: any) {
     if (user) {
       await markUserAsHandled(user.id, dbClient);
       console.log(`Scheduling appointment to user ${user.id}`);
-      const appointment = await scheduleAppointment(user, slot);
-      if (appointment) {
+      const appointmentResponse = await scheduleAppointment(user, slot);
+      if (appointmentResponse.status === 'SUCCESS') {
         console.log(`Marking user as handled ${user.id}`);
         await markUserAsHandled(user.id, dbClient);
         const userAppointment: UserAppointment = { ...toAppointment(slot), ...user };
         console.log(`Publishing to notifier ${user.id}`);
         await publishAppointmentWasSet(userAppointment);
+      } else {
+        //TODO: publish notification failed
+        console.log('We had an error', appointmentResponse.data);
       }
 
 

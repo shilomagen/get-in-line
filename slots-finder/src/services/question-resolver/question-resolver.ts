@@ -1,10 +1,17 @@
-import { PrepareVisitData } from '../api';
+import { PrepareVisitData } from '../../api';
+import { ErrorCode } from '../../consts';
 
 export enum Answers {
   Id = 'ID',
   PhoneNumber = 'PHONE_NUMBER',
   VisitType = 'VISIT_TYPE'
 }
+
+export const ErrorStrings: Record<string, ErrorCode> = {
+  ['מספר הטלפון']: ErrorCode.PhoneNumberNotValid,
+  ['תעודת הזהות']: ErrorCode.IdNotValid
+};
+
 
 const QuestionsToAnswers: Record<number, Record<number, Answers>> = {
   199: {
@@ -22,6 +29,16 @@ const QuestionsToAnswers: Record<number, Record<number, Answers>> = {
 export class QuestionResolver {
   static isDone(question: PrepareVisitData): boolean {
     return !Boolean(question.QuestionnaireItem);
+  }
+
+  protected static resolveErrorCode(errorMessage: string): ErrorCode | null {
+    const errStr = Object.keys(ErrorStrings).find(errStr => errorMessage.includes(errStr));
+    return errStr ? ErrorStrings[errStr] : ErrorCode.General;
+  }
+
+  static hasErrors(question: PrepareVisitData): ErrorCode | null {
+    const error = question.Validation?.Messages?.[0];
+    return error ? QuestionResolver.resolveErrorCode(error.Message) : null;
   }
 
   static resolveAnswer(question: PrepareVisitData): Answers {

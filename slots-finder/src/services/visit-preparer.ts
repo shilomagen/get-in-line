@@ -1,7 +1,22 @@
 import { HttpService } from './http';
-import { User, UserVisit } from '../internal-types';
+import { User, UserVisitResponse } from '../internal-types';
 import { AnswerQuestionRequest, PrepareVisitData } from '../api';
-import { Answers, QuestionResolver } from './question-resolver';
+import { Answers, QuestionResolver } from './question-resolver/question-resolver';
+import { ErrorCode } from '../consts';
+
+interface PrepareRequestSuccess {
+  status: 'SUCCESS',
+  data: PrepareVisitData
+}
+
+interface PrepareRequestFailed {
+  status: 'FAILED',
+  data: {
+    errorCode: ErrorCode
+  }
+}
+
+type PrepareVisitResponse = PrepareRequestSuccess | PrepareRequestFailed
 
 export class VisitPreparer {
 
@@ -27,10 +42,22 @@ export class VisitPreparer {
     return '';
   }
 
-  private async answer(question: PrepareVisitData, user: User): Promise<PrepareVisitData> {
+  private async answer(question: PrepareVisitData, user: User): Promise<PrepareVisitResponse> {
     if (QuestionResolver.isDone(question)) {
       console.log('Done with questions');
-      return question;
+      return {
+        status: 'SUCCESS',
+        data: question
+      };
+    }
+    if (QuestionResolver.hasErrors(question)) {
+      console.log('Found an error', question);
+      return {
+        status: 'FAILED',
+        data: {
+          errorCode: QuestionResolver.hasErrors(question) as ErrorCode
+        }
+      };
     }
     const whatToAnswer = QuestionResolver.resolveAnswer(question);
     const request: AnswerQuestionRequest = {
@@ -49,17 +76,26 @@ export class VisitPreparer {
     return this.answer(nextQuestion, user);
   }
 
-  async prepare(user: User, serviceId: number): Promise<UserVisit> {
+  async prepare(user: User, serviceId: number): Promise<UserVisitResponse> {
     const initialQuestion = await this.httpService.prepareVisit(serviceId);
     console.log(JSON.stringify(initialQuestion));
-    const visitData = await this.answer(initialQuestion, user);
+    const response = await this.answer(initialQuestion, user);
+    if (response.status === 'SUCCESS') {
+      return {
+        status: 'SUCCESS',
+        data: {
+          user,
+          visitId: response.data.PreparedVisitId,
+          visitToken: response.data.PreparedVisitToken
+        }
 
+      };
+    }
     return {
-      ...user,
-      visitId: visitData.PreparedVisitId,
-      visitToken: visitData.PreparedVisitToken
+      status: 'FAILED',
+      data: {
+        errorCode: response.data.errorCode
+      }
     };
-
-
   }
 }

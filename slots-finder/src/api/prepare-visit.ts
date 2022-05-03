@@ -11,8 +11,12 @@ export interface AnswerQuestionRequest {
   AnswerText: string | null;
 }
 
+interface ValidationMessage {
+  Message: string;
+  Type: string;
+}
 export interface Validation {
-  Messages: any[];
+  Messages: ValidationMessage[];
 }
 
 export interface NavigationState {

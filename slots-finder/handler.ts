@@ -2,7 +2,7 @@ import { SlotsFinder } from './src/services/slots-finder';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { HttpService, SessionCreator } from './src/services';
 
-const MAX_DAYS = 7;
+const MAX_DAYS = 14;
 
 export async function findSlots(_event: any, _context: any): Promise<void> {
   const token = await SessionCreator.create();

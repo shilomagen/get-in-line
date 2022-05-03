@@ -1,3 +1,6 @@
+import { ErrorCode } from './consts';
+import { AppointmentSetResult } from './api';
+
 export interface CalendarSlot {
   date: string;
   timeSinceMidnight: number;
@@ -42,10 +45,41 @@ export interface User {
   phone: string;
 }
 
-export interface UserVisit extends User {
+export interface UserVisitSuccessData {
   visitId: number;
   visitToken: string;
+  user: User;
 }
+
+interface UserVisitSuccess {
+  status: 'SUCCESS';
+  data: UserVisitSuccessData;
+}
+
+interface UserVisitFailed {
+  status: 'FAILED';
+  data: {
+    errorCode: ErrorCode;
+  };
+}
+
+export type UserVisitResponse = UserVisitSuccess | UserVisitFailed;
+
+interface InternalSetAppointmentSuccess {
+  status: 'SUCCESS';
+  data: AppointmentSetResult;
+}
+
+interface InternalSetAppointmentFailed {
+  status: 'FAILED',
+  data: {
+    errorCode: ErrorCode
+  }
+}
+
+export type InternalSetAppointmentResponse =
+  InternalSetAppointmentSuccess
+  | InternalSetAppointmentFailed
 
 export interface Appointment {
   hour: string;

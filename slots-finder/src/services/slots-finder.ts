@@ -2,6 +2,7 @@ import { HttpService, loopWithDelay } from './http';
 import { CalendarSlot, EnrichedService, EnrichedSlot, Location, Service } from '../internal-types';
 import { toCalendarSlot, toEnrichedSlot } from '../mappers';
 import { DateUtils } from '../utils';
+import { Locations } from '../locations';
 
 export class SlotsFinder {
   constructor(private readonly httpService: HttpService) {
@@ -23,9 +24,8 @@ export class SlotsFinder {
   }
 
   async find(maxDaysUntilAppointment: number): Promise<EnrichedSlot[]> {
-    const locations = await this.httpService.getLocations();
-    const services = await loopWithDelay(locations.map(({ id }) => id), (id) => this.httpService.getServiceIdByLocationId(id)).then(res => res.flat());
-    const serviceIdToLocationMap = this.createServiceToLocationMap(services, locations);
+    const services = await loopWithDelay(Locations.map(({ id }) => id), (id) => this.httpService.getServiceIdByLocationId(id)).then(res => res.flat());
+    const serviceIdToLocationMap = this.createServiceToLocationMap(services, Locations);
     const serviceIds = services.map(service => service.id);
     const calendars = await loopWithDelay(serviceIds, (serviceId) => this.httpService.getCalendars(serviceId))
     const relevantCalendars = calendars.flat().filter(({ calendarDate }) => DateUtils.isDateInDaysRange(calendarDate, maxDaysUntilAppointment));

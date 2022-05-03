@@ -53,3 +53,9 @@ export enum City {
   Nahariya = <any>'נהריה',
   Akko = <any>'עכו',
 }
+
+export enum ErrorCode {
+  General = 100,
+  IdNotValid = 101,
+  PhoneNumberNotValid = 102,
+}
