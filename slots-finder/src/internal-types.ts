@@ -1,5 +1,7 @@
 import { ErrorCode } from './consts';
-import { AppointmentSetResult } from './api';
+import { AppointmentSetResult, PrepareVisitData } from './api';
+import { UserDomain } from './services/user';
+import { UserAppointment } from '../appointment-setter';
 
 export interface CalendarSlot {
   date: string;
@@ -51,36 +53,6 @@ export interface UserVisitSuccessData {
   user: User;
 }
 
-interface UserVisitSuccess {
-  status: 'SUCCESS';
-  data: UserVisitSuccessData;
-}
-
-interface UserVisitFailed {
-  status: 'FAILED';
-  data: {
-    errorCode: ErrorCode;
-  };
-}
-
-export type UserVisitResponse = UserVisitSuccess | UserVisitFailed;
-
-interface InternalSetAppointmentSuccess {
-  status: 'SUCCESS';
-  data: AppointmentSetResult;
-}
-
-interface InternalSetAppointmentFailed {
-  status: 'FAILED',
-  data: {
-    errorCode: ErrorCode
-  }
-}
-
-export type InternalSetAppointmentResponse =
-  InternalSetAppointmentSuccess
-  | InternalSetAppointmentFailed
-
 export interface Appointment {
   hour: string;
   date: string;
@@ -88,3 +60,48 @@ export interface Appointment {
   address: string;
   branchName: string;
 }
+
+export enum ResponseStatus {
+  Success = 'Success',
+  Failed = 'Failed'
+}
+
+export interface ResponseSuccess<T> {
+  status: ResponseStatus.Success,
+  data: T
+}
+
+export interface ResponseFailed {
+  status: ResponseStatus.Failed,
+  data: {
+    errorCode: ErrorCode
+  }
+}
+
+export type ResponseWrapper<T> = ResponseSuccess<T> | ResponseFailed;
+
+export type InternalSetAppointmentResponse = ResponseWrapper<AppointmentSetResult>
+
+export type UserVisitResponse = ResponseWrapper<UserVisitSuccessData>
+
+export type SetAppointmentResponse = ResponseWrapper<AppointmentSetResult>;
+
+export type AppointmentSetterResponse = ResponseWrapperWithUser<UserAppointment>;
+
+export type PrepareVisitResponse = ResponseWrapper<PrepareVisitData>;
+
+export type ResponseWrapperWithUser<T> = ResponseWrapper<T> & { user: UserDomain | null };
+
+
+
+export const aFailedResponse = (errorCode: ErrorCode): ResponseFailed => ({
+  status: ResponseStatus.Failed,
+  data: {
+    errorCode
+  }
+});
+
+export const aSuccessResponse = <T>(data: T): ResponseSuccess<T> => ({
+  status: ResponseStatus.Success,
+  data,
+});

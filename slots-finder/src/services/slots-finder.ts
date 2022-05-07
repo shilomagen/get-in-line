@@ -10,7 +10,7 @@ import { SendMessageCommandOutput } from '@aws-sdk/client-sqs';
 export class SlotsFinder {
   constructor(
     private readonly httpService: HttpService,
-    private readonly publisher: (slot: EnrichedSlot) => Promise<SendMessageCommandOutput>,
+    private readonly publish: (slot: EnrichedSlot) => Promise<void>,
     private readonly logger: BaseLogger) {
   }
 
@@ -19,7 +19,7 @@ export class SlotsFinder {
     const slots = await this.httpService.getAvailableSlotByCalendar(calendarId, serviceId);
     const enrichedSlots = slots.map(slot => toCalendarSlot(enrichedService, slot)).map(s => toEnrichedSlot(s, location));
     enrichedSlots.forEach(slot => this.logger.info({ slot }, LoggerMessages.SlotsFound));
-    await Promise.allSettled(enrichedSlots.map((slot) => this.publisher(slot)));
+    await Promise.allSettled(enrichedSlots.map((slot) => this.publish(slot)));
   }
 
   private createServiceToLocationMap(services: Service[], locations: Location[]): Record<string, Location> {

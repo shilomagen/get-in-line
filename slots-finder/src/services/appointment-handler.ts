@@ -1,37 +1,23 @@
 import { HttpService } from './http';
-import { EnrichedSlot, UserVisitSuccessData } from '../internal-types';
 import {
-  AppointmentSetRequest,
-  AppointmentSetResponse,
-  AppointmentSetResult
-} from '../api/appointment-set';
+  aFailedResponse,
+  aSuccessResponse,
+  EnrichedSlot,
+  SetAppointmentResponse,
+  UserVisitSuccessData
+} from '../internal-types';
+import { AppointmentSetRequest, AppointmentSetResponse } from '../api';
 import { ErrorCode, MockPosition } from '../consts';
-import { getLogger, LoggerMessages } from './logger';
 
-const logger = getLogger()
 enum ErrorStrings {
   DoubleBook = 'לא ניתן לתאם תור חדש לפני ביטול התור הקיים'
 }
-
-interface SetAppointmentSuccess {
-  status: 'SUCCESS';
-  data: AppointmentSetResult;
-}
-
-interface SetAppointmentFailed {
-  status: 'FAILED';
-  data: {
-    errorCode: ErrorCode;
-  };
-}
-
-type SetAppointmentResponse = SetAppointmentSuccess | SetAppointmentFailed
 
 export class AppointmentHandler {
   constructor(private readonly httpService: HttpService) {
   }
 
-  private resolveError(response: AppointmentSetResponse): ErrorCode {
+  private static resolveError(response: AppointmentSetResponse): ErrorCode {
     if (response.ErrorMessage === 'General server error') {
       return ErrorCode.SetAppointmentGeneralError;
     } else if (Array.isArray(response.Messages)) {
@@ -57,21 +43,9 @@ export class AppointmentHandler {
     };
 
     const response = await this.httpService.setAppointment(visitToken, setAppointmentRequest);
-    if (response?.Success) {
-      return {
-        status: 'SUCCESS',
-        data: response.Results!
-      };
-    } else {
-      logger.error({response}, LoggerMessages.ErrorSetAppointment)
-      const errorCode = this.resolveError(response!);
-      return {
-        status: 'FAILED',
-        data: {
-          errorCode: errorCode
-        }
-      };
-    }
+    return response?.Success ?
+      aSuccessResponse(response.Results!) :
+      aFailedResponse(AppointmentHandler.resolveError(response!));
   }
 
 }

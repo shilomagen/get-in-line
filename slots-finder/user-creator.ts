@@ -1,21 +1,24 @@
 import { createDynamoDBClient } from './src/model/db-client';
-import { PutItemCommand } from '@aws-sdk/client-dynamodb';
-import { marshall } from '@aws-sdk/util-dynamodb';
 import { UserDTO } from './src/model/user';
+import { isUser, UserService } from './src/services/user';
+import { getLogger, LoggerMessages, withRequest } from './src/services/logger';
 
-export interface UserDomain extends UserDTO {
-  handled: boolean;
-  createdAt: number;
-}
-export const create = async (event: any, _context: any) => {
-  const dbClient = createDynamoDBClient();
-  const userDomain = { ...JSON.parse(event.body), handled: false, createdAt: Date.now() };
-
-  await dbClient.send(new PutItemCommand({
-    Item: marshall(userDomain),
-    TableName: process.env.USERS_TABLE
-  }));
+export const create = async (event: any, context: any) => {
+  withRequest(event, context);
+  const logger = getLogger();
+  logger.info({ event }, LoggerMessages.UserCreateRequest);
+  const userService = new UserService(createDynamoDBClient());
+  const userOrError = await userService.createUser(JSON.parse(event.body) as UserDTO);
+  if (isUser(userOrError)) {
+    logger.info({ userOrError }, LoggerMessages.UserCreateSuccess);
+    return {
+      statusCode: 200,
+      user: userOrError
+    };
+  }
+  logger.info({ userOrError }, LoggerMessages.UserCreateError);
   return {
-    statusCode: 200
+    status: 400,
+    error: userOrError
   };
 };
