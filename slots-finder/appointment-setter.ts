@@ -24,7 +24,7 @@ const ErrorHandlers: Record<ErrorCode, (userService: UserService, userId: string
     return { shouldRetry: true, shouldPublish: true };
   },
   [ErrorCode.SetAppointmentGeneralError]: async (userService: UserService, userId: string | undefined, logger: BaseLogger) => {
-    logger.info({userId}, LoggerMessages.MarkUserUnavailable)
+    logger.info({userId}, LoggerMessages.MarkUserAvailable)
     await userService.markUserAvailable(userId!);
     return { shouldRetry: false, shouldPublish: false };
   },

@@ -1,5 +1,4 @@
 import { SlotsFinder } from './src/services/slots-finder';
-import { SendMessageCommand, SendMessageCommandOutput, SQSClient } from '@aws-sdk/client-sqs';
 import { HttpService, SessionCreator } from './src/services';
 import { getLogger, withRequest } from './src/services/logger';
 import { EnrichedSlot } from './src/internal-types';

@@ -6,7 +6,7 @@ export const Messages = {
   עזרו לנו להמשיך לפתח ולתחזק את גםכןבוט ופרגנו לנו בקפה 🤙\n
   https://bit.ly/3KHsUiB 
   `,
-  invalidPhone: (user: UserDomain) => 'Data is wrong',
-  invalidId: (user: UserDomain) => 'Data is wrong',
-  doubleBooking: (user: UserDomain) => 'Double Booking',
+  invalidPhone: (_user: UserDomain) => 'Data is wrong',
+  invalidId: (_user: UserDomain) => 'Data is wrong',
+  doubleBooking: (_user: UserDomain) => 'Double Booking',
 }

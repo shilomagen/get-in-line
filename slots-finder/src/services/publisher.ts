@@ -1,9 +1,5 @@
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import {
-  AppointmentSetterResponse,
-  EnrichedSlot,
-  ResponseWrapperWithUser
-} from '../internal-types';
+import { AppointmentSetterResponse, EnrichedSlot } from '../internal-types';
 
 interface IPublisher {
   publishToNotifier(message: AppointmentSetterResponse): Promise<void>;

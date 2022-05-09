@@ -5,7 +5,6 @@ import { DateUtils } from '../utils';
 import { Locations } from '../locations';
 import { BaseLogger } from 'pino';
 import { LoggerMessages } from './logger';
-import { SendMessageCommandOutput } from '@aws-sdk/client-sqs';
 
 export class SlotsFinder {
   constructor(

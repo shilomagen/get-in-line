@@ -23,7 +23,7 @@ export interface UserDomain {
   preferredCities: string[];
   cities: string[]; // For backward compatibility
   phone: string;
-  status: UserDomainStatus;
+  userStatus: UserDomainStatus;
   handled: boolean;
   createdAt: number;
   updatedAt: number;
@@ -51,14 +51,16 @@ export class UserService implements IUserService {
         ...value,
         handled: false,
         preferredCities: value.cities,
-        status: UserDomainStatus.Available,
+        userStatus: UserDomainStatus.Available,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
       const response = await this.dbClient.send(new PutItemCommand({
         Item: marshall(userDomain),
-        TableName: this.usersTableName
+        TableName: this.usersTableName,
+        ReturnValues: 'ALL_NEW'
       }));
+
       return unmarshall(response.Attributes!) as Promise<UserDomain>;
     }
     return error!;
@@ -88,7 +90,7 @@ export class UserService implements IUserService {
       Key: {
         id: { S: `${id}` }
       },
-      UpdateExpression: 'set handled = :value, status = :userStatus',
+      UpdateExpression: 'set handled = :value, userStatus = :userStatus',
       ExpressionAttributeValues: {
         ':value': { BOOL: true },
         ':userStatus': { S: UserDomainStatus.Unavailable }
@@ -105,7 +107,7 @@ export class UserService implements IUserService {
       Key: {
         id: { S: `${id}` }
       },
-      UpdateExpression: 'set status = :userStatus',
+      UpdateExpression: 'set userStatus = :userStatus',
       ExpressionAttributeValues: {
         ':userStatus': { S: userStatus }
       },
@@ -121,7 +123,7 @@ export class UserService implements IUserService {
       Key: {
         id: { S: `${id}` }
       },
-      UpdateExpression: 'set handled = :value, status = :userStatus',
+      UpdateExpression: 'set handled = :value, userStatus = :userStatus',
       ExpressionAttributeValues: {
         ':value': { BOOL: false },
         ':userStatus': { S: UserDomainStatus.Available }
