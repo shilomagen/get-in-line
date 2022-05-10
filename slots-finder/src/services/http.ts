@@ -23,6 +23,7 @@ import { getLogger, LoggerMessages } from './logger';
 const logger = getLogger();
 
 const BaseURL = 'https://central.qnomy.com/CentralAPI';
+const GamKenBotBaseUrl = 'https://www.gamkenbot.com/_functions/';
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 
@@ -50,7 +51,8 @@ export const Urls = {
   setAppointment: `${BaseURL}/AppointmentSet`,
   cancelAppointment: `${BaseURL}/AppointmentCancel`,
   prepareVisit: (serviceId: number) => `${BaseURL}/Service/${serviceId}/PrepareVisit`,
-  answer: (visitToken: string) => `${BaseURL}/PreparedVisit/${visitToken}/Answer`
+  answer: (visitToken: string) => `${BaseURL}/PreparedVisit/${visitToken}/Answer`,
+  notifyDoubleBookEmail: `${GamKenBotBaseUrl}/sendDoubleBookEmail`
 
 };
 
@@ -68,7 +70,6 @@ function responseInterceptor(axiosResponse: AxiosResponse) {
   return axiosResponse;
 }
 
-axios.interceptors.response.use();
 
 export class HttpService {
   private readonly httpClient: AxiosInstance;
@@ -139,6 +140,10 @@ export class HttpService {
         PreparedVisitToken: visitToken
       }
     }).then(res => res.data);
+  }
+
+  public static notifyDoubleBookingEmail(userId: string): Promise<void> {
+    return axios.post(Urls.notifyDoubleBookEmail, { idNumbers: [userId] }).then(res => res.data);
   }
 
 

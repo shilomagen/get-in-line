@@ -2,14 +2,14 @@ import { createDynamoDBClient } from './src/model/db-client';
 import { Appointment, EnrichedSlot, ResponseStatus } from './src/internal-types';
 import { ErrorCode } from './src/consts';
 import { getLogger, LoggerMessages, withRequest } from './src/services/logger';
-import { UserDomain, UserDomainStatus, UserService } from './src/services/user';
+import { UserDomainStatus, UserDomainV2, UserService } from './src/services/user';
 import { BaseLogger } from 'pino';
 import { Publisher } from './src/services/publisher';
 import { AppointmentScheduler } from './src/services/appointment-scheduler';
 
 export type UserAppointment =
   Appointment
-  & Omit<UserDomain, 'cities' | 'handled' | 'preferredCities' | 'status'>;
+  & Omit<UserDomainV2, 'cities' | 'handled' | 'preferredCities' | 'userStatus'>;
 
 interface ActionsToTake {
   shouldRetry: boolean;
@@ -25,7 +25,7 @@ const ErrorHandlers: Record<ErrorCode, (userService: UserService, userId: string
   },
   [ErrorCode.SetAppointmentGeneralError]: async (userService: UserService, userId: string | undefined, logger: BaseLogger) => {
     logger.info({userId}, LoggerMessages.MarkUserAvailable)
-    await userService.markUserAvailable(userId!);
+    await userService.setUserStatus(userId!, UserDomainStatus.Available);
     return { shouldRetry: false, shouldPublish: false };
   },
   [ErrorCode.NoCityFoundForUser]: async () => Promise.resolve({ shouldRetry: false, shouldPublish: false }),

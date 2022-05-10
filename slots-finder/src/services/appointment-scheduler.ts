@@ -1,7 +1,8 @@
 import { HttpService } from './http';
-import { UserDomain, UserService } from './user';
+import { UserDomainStatus, UserDomainV2, UserService } from './user';
 import {
-  aFailedResponse, AppointmentSetterResponse,
+  aFailedResponse,
+  AppointmentSetterResponse,
   aSuccessResponse,
   EnrichedSlot,
   ResponseStatus,
@@ -43,7 +44,7 @@ export class AppointmentScheduler {
     return SessionCreator.create().then(token => new HttpService(token));
   }
 
-  private async setAppointmentToUser(user: UserDomain, userVisit: UserVisitSuccessData): Promise<SetAppointmentResponse> {
+  private async setAppointmentToUser(user: UserDomainV2, userVisit: UserVisitSuccessData): Promise<SetAppointmentResponse> {
     this.logger.info({ userId: user.id }, LoggerMessages.ScheduleAppointmentStart);
     const appointmentHandler = new AppointmentHandler(await this.httpService);
     const response = await appointmentHandler.setAppointment(userVisit, this.slot);
@@ -54,22 +55,23 @@ export class AppointmentScheduler {
 
   async set(): Promise<AppointmentSetterResponse> {
     const { mappedCity } = this.slot;
-    this.logger.info({ city: mappedCity! }, LoggerMessages.LookingForUserInCity);
+    this.logger.info({ city: mappedCity! }, LoggerMessages.CityLookup);
     const user = await this.userService.getFirstUserByCity(mappedCity!);
     if (user) {
       this.logger.info({ user }, LoggerMessages.MarkUserUnavailable);
-      await this.userService.markUserUnavailable(user.id);
+      await this.userService.setUserStatus(user.id, UserDomainStatus.Unavailable);
       const httpClient = await this.httpService;
       this.logger.info({}, LoggerMessages.StartVisitPrepare);
       const userVisit = await new VisitPreparer(httpClient, this.logger).prepare(user, this.slot.serviceId);
       if (userVisit.status === ResponseStatus.Success) {
         const appointment = await this.setAppointmentToUser(user, userVisit.data);
         if (appointment.status === ResponseStatus.Success) {
-          const { preferredCities, cities, handled, status, ...restUser } = user;
+          const { preferredCities, userStatus, ...restUser } = user;
           const userAppointment: UserAppointment = {
             ...restUser,
             ...toAppointment(this.slot),
           };
+          await this.userService.setUserStatus(user.id, UserDomainStatus.AppointmentSet)
           this.logger.info({ userAppointment }, LoggerMessages.SetAppointmentSuccess);
           return { ...aSuccessResponse(userAppointment), user };
         } else {

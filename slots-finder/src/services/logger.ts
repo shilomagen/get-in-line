@@ -10,7 +10,7 @@ export enum LoggerMessages {
   AppointmentResponse = 'AppointmentResponse',
   Request = 'Request',
   Response = 'Response',
-  LookingForUserInCity =  'LookingForUserInCity',
+
   SetAppointmentStart = 'SetAppointmentStart',
   UserCreateRequest = 'UserCreateRequest',
   UserCreateSuccess = 'UserCreateSuccess',
@@ -25,7 +25,9 @@ export enum LoggerMessages {
   VisitPrepareNextMessage = 'VisitPrepareNextMessage',
   VisitPrepareInitialQuestion = 'VisitPrepareInitialQuestion',
   VisitPrepareDoneQuestions = 'VisitPrepareDoneQuestions',
-  NotifyToRecipientAboutAppointment = 'NotifyToRecipient',
+  ReceivedNotifyMessage = 'ReceivedNotifyMessage',
+  NotifyToUserAboutAppointment = 'NotifyToUserAboutAppointment',
+  NotifyDoubleBooking = 'NotifyDoubleBooking',
   SMSPublishResult = 'SMSPublishResult',
 }
 

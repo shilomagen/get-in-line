@@ -1,6 +1,6 @@
 import { ErrorCode } from './consts';
 import { AppointmentSetResult, PrepareVisitData } from './api';
-import { UserDomain } from './services/user';
+import { UserDomainV2 } from './services/user';
 import { UserAppointment } from '../appointment-setter';
 
 export interface CalendarSlot {
@@ -90,7 +90,7 @@ export type AppointmentSetterResponse = ResponseWrapperWithUser<UserAppointment>
 
 export type PrepareVisitResponse = ResponseWrapper<PrepareVisitData>;
 
-export type ResponseWrapperWithUser<T> = ResponseWrapper<T> & { user: UserDomain | null };
+export type ResponseWrapperWithUser<T> = ResponseWrapper<T> & { user: UserDomainV2 | null };
 
 
 

@@ -12,6 +12,8 @@ provider:
   timeout: 360
   environment:
     USERS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    USERS_TABLE_V2:
+      Ref: UsersTableV2
     APPLICATION_NAME: ${param:APPLICATION_NAME}
     APPLICATION_API_KEY: ${param:APPLICATION_API_KEY}
     TWILIO_ACCOUNT_SID: ${param:TWILIO_ACCOUNT_SID}
@@ -53,6 +55,24 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.USERS_TABLE}
+    UsersTableV2:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        SSESpecification:
+          SSEEnabled: true
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+
 
 constructs:
   appointmentSetQueue:
@@ -77,7 +97,7 @@ functions:
     timeout: 600
     events:
       # Invoke Lambda function every minute
-      - schedule: rate(2 minutes)
+      - schedule: rate(1 minute)
     environment:
       SLOTS_QUEUE_URL: ${construct:slotsQueue.queueUrl}
   createUser:

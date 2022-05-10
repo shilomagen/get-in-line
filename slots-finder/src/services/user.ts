@@ -16,123 +16,84 @@ export enum UserDomainStatus {
   DoubleBooking = 'DoubleBooking' //Could not create an appointment due to double booking,
 }
 
-export interface UserDomain {
+export interface UserDomainV2 {
   id: string;
+  email?: string;
   firstName: string;
   lastName: string;
   preferredCities: string[];
-  cities: string[]; // For backward compatibility
   phone: string;
   userStatus: UserDomainStatus;
-  handled: boolean;
   createdAt: number;
   updatedAt: number;
 }
 
-export const isUser = (user: any): user is UserDomain => user.firstName;
+export const isUser = (user: any): user is UserDomainV2 => user.firstName;
 
 interface IUserService {
-  createUser(userDTO: UserDTO): Promise<UserDomain | ValidationError>;
-  getFirstUserByCity(city: string): Promise<UserDomain | null>;
-  markUserUnavailable(id: string): Promise<UserDomain>;
-  markUserAvailable(id:string): Promise<UserDomain>;
+  createUser(userDTO: UserDTO): Promise<UserDomainV2 | ValidationError>;
+  getFirstUserByCity(city: string): Promise<UserDomainV2 | null>;
+  setUserStatus(id: string, userStatus: UserDomainStatus): Promise<UserDomainV2>;
 }
 
 export class UserService implements IUserService {
-  constructor(private readonly dbClient: DynamoDBClient, private readonly usersTableName: string = process.env.USERS_TABLE!) {
+  constructor(private readonly dbClient: DynamoDBClient, private readonly usersTableName: string = process.env.USERS_TABLE_V2!) {
   }
 
-  private sortByDate = (userA: UserDomain, userB: UserDomain) => userA.createdAt - userB.createdAt;
+  private sortByDate = (userA: UserDomainV2, userB: UserDomainV2) => userA.createdAt - userB.createdAt;
 
-  async createUser(user: UserDTO): Promise<UserDomain | ValidationError> {
+  async createUser(user: UserDTO): Promise<UserDomainV2 | ValidationError> {
     const { value, error } = UserSchema.validate(user);
     if (value) {
-      const userDomain: UserDomain = {
+      const userDomain: UserDomainV2 = {
         ...value,
-        handled: false,
-        preferredCities: value.cities,
+        preferredCities: value.preferredCities,
         userStatus: UserDomainStatus.Available,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
-      const response = await this.dbClient.send(new PutItemCommand({
+      await this.dbClient.send(new PutItemCommand({
         Item: marshall(userDomain),
         TableName: this.usersTableName,
-        ReturnValues: 'ALL_NEW'
       }));
 
-      return unmarshall(response.Attributes!) as Promise<UserDomain>;
+      return userDomain;
     }
     return error!;
   }
 
-  async getFirstUserByCity(city: string): Promise<UserDomain | null> {
+  async getFirstUserByCity(city: string): Promise<UserDomainV2 | null> {
     const command = new ScanCommand({
-      TableName: process.env.USERS_TABLE,
-      FilterExpression: 'contains(#DYNOBASE_cities, :cities) AND #DYNOBASE_handled = :handled',
+      TableName: this.usersTableName,
+      FilterExpression: 'contains(#DYNOBASE_preferredCities, :preferredCities) AND #DYNOBASE_userStatus = :userStatus',
       ExpressionAttributeNames: {
-        '#DYNOBASE_cities': 'cities',
-        '#DYNOBASE_handled': 'handled'
+        '#DYNOBASE_preferredCities': 'preferredCities',
+        '#DYNOBASE_userStatus': 'userStatus'
       },
       ExpressionAttributeValues: {
-        ':cities': { S: city },
-        ':handled': { BOOL: false }
+        ':preferredCities': { S: city },
+        ':userStatus': { S: UserDomainStatus.Available }
       }
     });
     const { Items } = await this.dbClient.send(command);
-    const response = (Items || []).map(item => unmarshall(item) as UserDomain).sort((a, b) => this.sortByDate(a, b));
+    const response = (Items || []).map(item => unmarshall(item) as UserDomainV2).sort((a, b) => this.sortByDate(a, b));
     return response[0] ?? null;
   }
 
-  async markUserUnavailable(id: string): Promise<UserDomain> {
+  async setUserStatus(id: string, userStatus: UserDomainStatus): Promise<UserDomainV2> {
     const command = new UpdateItemCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: {
-        id: { S: `${id}` }
-      },
-      UpdateExpression: 'set handled = :value, userStatus = :userStatus',
-      ExpressionAttributeValues: {
-        ':value': { BOOL: true },
-        ':userStatus': { S: UserDomainStatus.Unavailable }
-      },
-      ReturnValues: 'ALL_NEW'
-    });
-    const response = await this.dbClient.send(command);
-    return unmarshall(response.Attributes!) as UserDomain;
-  }
-
-  async setUserStatus(id: string, userStatus: UserDomainStatus): Promise<UserDomain> {
-    const command = new UpdateItemCommand({
-      TableName: process.env.USERS_TABLE,
+      TableName: this.usersTableName,
       Key: {
         id: { S: `${id}` }
       },
       UpdateExpression: 'set userStatus = :userStatus',
       ExpressionAttributeValues: {
-        ':userStatus': { S: userStatus }
-      },
-      ReturnValues: 'ALL_NEW'
+        ':userStatus': { S: userStatus },
+        ':updatedAt': { N: `${Date.now()}` }
+      }
     });
     const response = await this.dbClient.send(command);
-    return unmarshall(response.Attributes!) as UserDomain;
+    return unmarshall(response.Attributes!) as UserDomainV2;
   }
-
-  async markUserAvailable(id: string): Promise<UserDomain> {
-    const command = new UpdateItemCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: {
-        id: { S: `${id}` }
-      },
-      UpdateExpression: 'set handled = :value, userStatus = :userStatus',
-      ExpressionAttributeValues: {
-        ':value': { BOOL: false },
-        ':userStatus': { S: UserDomainStatus.Available }
-      },
-      ReturnValues: 'ALL_NEW'
-    });
-    const response = await this.dbClient.send(command);
-    return unmarshall(response.Attributes!) as UserDomain;
-  }
-
 
 }
