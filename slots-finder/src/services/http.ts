@@ -58,7 +58,6 @@ export const Urls = {
 
 
 function requestInterceptor(config: AxiosRequestConfig) {
-  (config.params || {})['position'] = MockPosition;
   const params = JSON.stringify(config.params);
   const body = JSON.stringify(config.data);
   logger.info({ url: config.url, params, body }, LoggerMessages.Request);
@@ -82,6 +81,10 @@ export class HttpService {
         'Application-API-Key': process.env.APPLICATION_API_KEY || ''
       }
     });
+    this.httpClient.interceptors.request.use((config) => {
+      (config.params || {})['position'] = MockPosition;
+      return config;
+    })
     if (enableLogs) {
       this.httpClient.interceptors.request.use((config) => requestInterceptor(config));
       this.httpClient.interceptors.response.use((response) => responseInterceptor(response));

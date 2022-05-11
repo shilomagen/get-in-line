@@ -24,7 +24,7 @@ export class Publisher implements IPublisher {
 
   async publishToAppointmentSetter(slot: EnrichedSlot): Promise<void> {
     const command = new SendMessageCommand({
-      QueueUrl: QueueUrls.Notifier,
+      QueueUrl: QueueUrls.AppointmentSetter,
       MessageBody: JSON.stringify(slot)
     });
     await this.sqsClient.send(command)
